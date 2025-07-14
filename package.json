@@ -1,0 +1,26 @@
+{
+  "name": "penida-cache-warmer",
+  "version": "1.0.0",
+  "description": "Cache warmer script for PenidaDiveCenter using Cloudflare and sitemap",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Your Name",
+  "license": "MIT",
+  "keywords": [
+    "cache",
+    "warmer",
+    "cloudflare",
+    "wordpress",
+    "sitemap",
+    "seo"
+  ],
+  "dependencies": {
+    "axios": "^1.10.0",
+    "dotenv": "^17.2.0",
+    "https-proxy-agent": "^7.0.6",
+    "xml2js": "^0.6.2"
+  }
+}

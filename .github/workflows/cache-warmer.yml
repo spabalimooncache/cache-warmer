@@ -1,0 +1,30 @@
+name: Run Cache Warmer Every Days 2 Times
+
+on:
+  schedule:
+    - cron: "0 0 * * *"  
+    - cron: "0 12 * * *"   
+  workflow_dispatch:
+
+jobs:
+  warm-cache:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Cache Warmer
+        run: npm run start
+        env:
+          BRD_PROXY_ID: ${{ secrets.BRD_PROXY_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
