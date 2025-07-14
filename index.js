@@ -14,7 +14,7 @@ const DOMAINS_MAP = {
 const PROXIES = {
   tw: process.env.BRD_PROXY_TW,
   id: process.env.BRD_PROXY_ID,
-  fr: process.env.BRD_PROXY_ID,
+  fr: process.env.BRD_PROXY_FR,
 };
 
 const USER_AGENTS = {
