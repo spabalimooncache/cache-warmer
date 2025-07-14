@@ -6,21 +6,15 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const DOMAINS_MAP = {
-//   id: "https://penidadivecenter.com",
-//   tw: "https://penidadivecenter.tw",
-  fr: "https://penidadivecenter.fr",
+  tw: "https://penidadivecenter.tw",
 };
 
 const PROXIES = {
   tw: process.env.BRD_PROXY_TW,
-  id: process.env.BRD_PROXY_ID,
-  fr: process.env.BRD_PROXY_FR,
 };
 
 const USER_AGENTS = {
   tw: "PenidaDiveCenter-CacheWarmer-TW/1.0",
-  id: "PenidaDiveCenter-CacheWarmer-ID/1.0",
-  fr: "PenidaDiveCenter-CacheWarmer-FR/1.0",
 };
 
 const CLOUDFLARE_ZONE_ID = process.env.CLOUDFLARE_ZONE_ID;
