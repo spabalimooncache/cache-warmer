@@ -1,5 +1,5 @@
 {
-  "name": "penida-cache-warmer",
+  "name": "spabalimoon-cache-warmer",
   "version": "1.0.0",
   "description": "Cache warmer script for PenidaDiveCenter using Cloudflare and sitemap",
   "main": "index.js",
