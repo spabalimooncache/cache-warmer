@@ -6,15 +6,48 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const DOMAINS_MAP = {
-  tw: "https://penidadivecenter.tw",
+  id: "https://spabalimoon.com",
+  tw: "https://spabalimoon.com",
+  au: "https://spabalimoon.com",
+  nl: "https://spabalimoon.com",
+  no: "https://spabalimoon.com",
+  dk: "https://spabalimoon.com",
+  de: "https://spabalimoon.com",
+  fr: "https://spabalimoon.com",
+  en: "https://spabalimoon.com",
+  es: "https://spabalimoon.com",
+  se: "https://spabalimoon.com",
+  fl: "https://spabalimoon.com",
 };
 
 const PROXIES = {
+  id: process.env.BRD_PROXY_ID,
   tw: process.env.BRD_PROXY_TW,
+  au: process.env.BRD_PROXY_AU,
+  nl: process.env.BRD_PROXY_NL,
+  no: process.env.BRD_PROXY_NO,
+  dk: process.env.BRD_PROXY_DK,
+  de: process.env.BRD_PROXY_DE,
+  fr: process.env.BRD_PROXY_FR,
+  en: process.env.BRD_PROXY_EN,
+  es: process.env.BRD_PROXY_ES,
+  se: process.env.BRD_PROXY_SE,
+  fl: process.env.BRD_PROXY_FL,
 };
 
 const USER_AGENTS = {
-  tw: "PenidaDiveCenter-CacheWarmer-TW/1.0",
+  id: "SpaBaliMoon-CacheWarmer-ID/1.0",
+  tw: "SpaBaliMoon-CacheWarmer-TW/1.0",
+  au: "SpaBaliMoon-CacheWarmer-AU/1.0",
+  nl: "SpaBaliMoon-CacheWarmer-NL/1.0",
+  no: "SpaBaliMoon-CacheWarmer-NO/1.0",
+  dk: "SpaBaliMoon-CacheWarmer-DK/1.0",
+  de: "SpaBaliMoon-CacheWarmer-DE/1.0",
+  fr: "SpaBaliMoon-CacheWarmer-FR/1.0",
+  en: "SpaBaliMoon-CacheWarmer-EN/1.0",
+  es: "SpaBaliMoon-CacheWarmer-ES/1.0",
+  se: "SpaBaliMoon-CacheWarmer-SE/1.0",
+  fl: "SpaBaliMoon-CacheWarmer-FL/1.0",
 };
 
 const CLOUDFLARE_ZONE_ID = process.env.CLOUDFLARE_ZONE_ID;
@@ -22,12 +55,21 @@ const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function fetchWithProxy(url, country) {
+function getProxyAgent(country) {
   const proxy = PROXIES[country];
-  const agent = new HttpsProxyAgent(proxy);
+  if (!proxy) throw new Error(`Missing proxy for ${country}`);
+  return new HttpsProxyAgent(proxy);
+}
+
+function getUserAgent(country) {
+  return USER_AGENTS[country] || "CacheWarmer/1.0";
+}
+
+async function fetchWithProxy(url, country) {
+  const agent = getProxyAgent(country);
   const res = await axios.get(url, {
     httpsAgent: agent,
-    headers: { "User-Agent": USER_AGENTS[country] },
+    headers: { "User-Agent": getUserAgent(country) },
     timeout: 15000,
   });
   return res.data;
@@ -108,8 +150,8 @@ async function purgeCloudflareCache(url) {
 }
 
 async function warmUrls(urls, country, batchSize = 3, delay = 5000) {
-  const proxy = PROXIES[country];
-  const agent = new HttpsProxyAgent(proxy);
+  const agent = getProxyAgent(country);
+  const userAgent = getUserAgent(country);
 
   const batches = Array.from({ length: Math.ceil(urls.length / batchSize) }, (_, i) => urls.slice(i * batchSize, i * batchSize + batchSize));
 
@@ -119,20 +161,19 @@ async function warmUrls(urls, country, batchSize = 3, delay = 5000) {
         try {
           const res = await retryableGet(url, {
             httpsAgent: agent,
-            headers: { "User-Agent": USER_AGENTS[country] },
+            headers: { "User-Agent": userAgent },
             timeout: 15000,
           });
 
           const cfCache = res.headers["cf-cache-status"] || "N/A";
           const lsCache = res.headers["x-litespeed-cache"] || "N/A";
           const cfRay = res.headers["cf-ray"] || "N/A";
+          const cfEdge = cfRay.includes("-") ? cfRay.split("-")[1] : "N/A";
 
-         const cfEdge = cfRay.includes("-") ? cfRay.split("-")[1] : "N/A";
-
-         console.log(`[${country}] ${res.status} cf=${cfCache} ls=${lsCache} edge=${cfEdge} - ${url}`);
+          console.log(`[${country}] ${res.status} cf=${cfCache} ls=${lsCache} edge=${cfEdge} - ${url}`);
 
           if (lsCache.toLowerCase() !== "hit") {
-            await purgeCloudflareCache(url); // biar WP bisa re-render
+            await purgeCloudflareCache(url);
           }
         } catch (err) {
           console.warn(`[${country}] ❌ Failed to warm ${url}: ${err?.message}`);
@@ -143,12 +184,17 @@ async function warmUrls(urls, country, batchSize = 3, delay = 5000) {
   }
 }
 
-// 🚀 Main
+// 🚀 MAIN
 (async () => {
   console.log(`[CacheWarmer] Started: ${new Date().toISOString()}`);
 
   await Promise.all(
     Object.entries(DOMAINS_MAP).map(async ([country, domain]) => {
+      if (!PROXIES[country]) {
+        console.warn(`[${country}] ❌ Skipping: no proxy defined`);
+        return;
+      }
+
       const sitemapList = await fetchIndexSitemaps(domain, country);
       const urlArrays = await Promise.all(sitemapList.map((sitemapUrl) => fetchUrlsFromSitemap(sitemapUrl, country)));
 
