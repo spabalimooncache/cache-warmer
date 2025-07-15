@@ -26,5 +26,15 @@ jobs:
         run: npm run start
         env:
           BRD_PROXY_ID: ${{ secrets.BRD_PROXY_ID }}
+          BRD_PROXY_TW: ${{ secrets.BRD_PROXY_TW }}
+          BRD_PROXY_AU: ${{ secrets.BRD_PROXY_AU }}
+          BRD_PROXY_NL: ${{ secrets.BRD_PROXY_NL }}
+          BRD_PROXY_NO: ${{ secrets.BRD_PROXY_NO }}
+          BRD_PROXY_DE: ${{ secrets.BRD_PROXY_DE }}
+          BRD_PROXY_FR: ${{ secrets.BRD_PROXY_FR }}
+          BRD_PROXY_DK: ${{ secrets.BRD_PROXY_DK }}
+          BRD_PROXY_ES: ${{ secrets.BRD_PROXY_ES }}
+          BRD_PROXY_SE: ${{ secrets.BRD_PROXY_SE }}
+          BRD_PROXY_FL: ${{ secrets.BRD_PROXY_FL }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
