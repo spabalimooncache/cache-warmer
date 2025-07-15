@@ -36,5 +36,6 @@ jobs:
           BRD_PROXY_ES: ${{ secrets.BRD_PROXY_ES }}
           BRD_PROXY_SE: ${{ secrets.BRD_PROXY_SE }}
           BRD_PROXY_FL: ${{ secrets.BRD_PROXY_FL }}
+          BRD_PROXY_EN: ${{ secrets.BRD_PROXY_EN }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
