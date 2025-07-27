@@ -50,6 +50,11 @@ const USER_AGENTS = {
   fl: "SpaBaliMoon-CacheWarmer-FL/1.0",
 };
 
+const MOBILE_USER_AGENTS = {
+  android: "SpaBAliMoon-CacheWarmer-Android/1.0",
+  ios: "SpaBAliMoon-CacheWarmer-iOS/1.0",
+};
+
 const CLOUDFLARE_ZONE_ID = process.env.CLOUDFLARE_ZONE_ID;
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 
@@ -61,7 +66,10 @@ function getProxyAgent(country) {
   return new HttpsProxyAgent(proxy);
 }
 
-function getUserAgent(country) {
+function getUserAgent(country, isMobile = false, platform = "android") {
+  if (isMobile) {
+    return MOBILE_USER_AGENTS[platform] || MOBILE_USER_AGENTS.android;
+  }
   return USER_AGENTS[country] || "CacheWarmer/1.0";
 }
 
@@ -149,61 +157,85 @@ async function purgeCloudflareCache(url) {
   }
 }
 
-async function warmUrls(urls, country, batchSize = 3, delay = 5000) {
+async function warmUrls(
+  urls,
+  country,
+  delay = 5000,
+  isMobile = false,
+  platform = ""
+) {
   const agent = getProxyAgent(country);
-  const userAgent = getUserAgent(country);
+  const userAgent = getUserAgent(country, isMobile, platform);
+  const mode = isMobile
+    ? `MOBILE-${(platform || "android").toUpperCase()}`
+    : "DESKTOP";
 
-  const batches = Array.from({ length: Math.ceil(urls.length / batchSize) }, (_, i) => urls.slice(i * batchSize, i * batchSize + batchSize));
 
-  for (const batch of batches) {
-    await Promise.all(
-      batch.map(async (url) => {
-        try {
-          const res = await retryableGet(url, {
-            httpsAgent: agent,
-            headers: { "User-Agent": userAgent },
-            timeout: 15000,
-          });
+  console.log(`[DEBUG UA] ${mode} - UA: ${userAgent}`);
 
-          const cfCache = res.headers["cf-cache-status"] || "N/A";
-          const lsCache = res.headers["x-litespeed-cache"] || "N/A";
-          const cfRay = res.headers["cf-ray"] || "N/A";
-          const cfEdge = cfRay.includes("-") ? cfRay.split("-")[1] : "N/A";
+  for (const url of urls) {
+    try {
+      const res = await retryableGet(url, {
+        httpsAgent: agent,
+        headers: { "User-Agent": userAgent },
+        timeout: 15000,
+      });
 
-          console.log(`[${country}] ${res.status} cf=${cfCache} ls=${lsCache} edge=${cfEdge} - ${url}`);
+      const cfCache = res.headers["cf-cache-status"] || "N/A";
+      const lsCache = res.headers["x-litespeed-cache"] || "N/A";
+      const cfRay = res.headers["cf-ray"] || "N/A";
+      const cfEdge = cfRay.includes("-") ? cfRay.split("-")[1] : "N/A";
 
-          if (lsCache.toLowerCase() !== "hit") {
-            await purgeCloudflareCache(url);
-          }
-        } catch (err) {
-          console.warn(`[${country}] ❌ Failed to warm ${url}: ${err?.message}`);
-        }
-      })
-    );
-    await sleep(delay);
+      console.log(
+        `[${country}][${mode}] ${res.status} cf=${cfCache} ls=${lsCache} edge=${cfEdge} - ${url}`
+      );
+
+      if (lsCache.toLowerCase() !== "hit") {
+        await purgeCloudflareCache(url);
+      }
+    } catch (err) {
+      console.warn(
+        `[${country}][${mode}] ❌ Failed to warm ${url}: ${err?.message}`
+      );
+    }
+
+    await sleep(delay); // Delay antar URL
   }
 }
+
 
 // 🚀 MAIN
 (async () => {
   console.log(`[CacheWarmer] Started: ${new Date().toISOString()}`);
 
-  await Promise.all(
-    Object.entries(DOMAINS_MAP).map(async ([country, domain]) => {
-      if (!PROXIES[country]) {
-        console.warn(`[${country}] ❌ Skipping: no proxy defined`);
-        return;
-      }
+  for (const [country, domain] of Object.entries(DOMAINS_MAP)) {
+    if (!PROXIES[country]) {
+      console.warn(`[${country}] ❌ Skipping: no proxy defined`);
+      continue;
+    }
 
-      const sitemapList = await fetchIndexSitemaps(domain, country);
-      const urlArrays = await Promise.all(sitemapList.map((sitemapUrl) => fetchUrlsFromSitemap(sitemapUrl, country)));
+    console.log(`🌐 [${country}] Processing ${domain}...`);
 
-      const urls = urlArrays.flat().filter(Boolean);
-      console.log(`[${country}] Found ${urls.length} URLs`);
+    const sitemapList = await fetchIndexSitemaps(domain, country);
+    const urlArrays = await Promise.all(
+      sitemapList.map((sitemapUrl) => fetchUrlsFromSitemap(sitemapUrl, country))
+    );
+    const urls = urlArrays.flat().filter(Boolean);
 
-      await warmUrls(urls, country);
-    })
-  );
+    console.log(`[${country}] Found ${urls.length} URLs`);
+
+    // Warming for MOBILE - IOS
+    await warmUrls(urls, country, 1000, true, "ios");
+
+    // Warming for MOBILE - ANDROID
+    await warmUrls(urls, country, 1000, true, "android");
+
+    // Warming for DESKTOP
+    await warmUrls(urls, country, 1000, false);
+
+    console.log(`[${country}] ✅ Finished\n`);
+  }
 
   console.log(`[CacheWarmer] Finished: ${new Date().toISOString()}`);
 })();
+
