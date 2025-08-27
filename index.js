@@ -39,6 +39,7 @@ const PROXIES = {
   fl: process.env.BRD_PROXY_FL,
 };
 
+// === 1 USER AGENT PER COUNTRY (DESKTOP ONLY) ===
 const USER_AGENTS = {
   id: "SpaBaliMoon-CacheWarmer-ID/1.0",
   tw: "SpaBaliMoon-CacheWarmer-TW/1.0",
@@ -52,11 +53,6 @@ const USER_AGENTS = {
   es: "SpaBaliMoon-CacheWarmer-ES/1.0",
   se: "SpaBaliMoon-CacheWarmer-SE/1.0",
   fl: "SpaBaliMoon-CacheWarmer-FL/1.0",
-};
-
-const MOBILE_USER_AGENTS = {
-  android: "SpaBaliMoon-CacheWarmer-Android/1.0",
-  ios: "SpaBaliMoon-CacheWarmer-iOS/1.0",
 };
 
 /* ====== CLOUDFLARE (opsional) ====== */
@@ -107,7 +103,7 @@ class AppsScriptLogger {
       this.startedAt, // started_at (ISO)
       this.finishedAt, // finished_at (diisi saat finalize)
       country, // country
-      mode, // device/mode
+      mode, // device/mode (tetap disimpan, di sini fixed "DESKTOP")
       url, // url
       status, // status code
       cfCache, // cf_cache
@@ -151,12 +147,10 @@ class AppsScriptLogger {
 }
 
 /* ====== HTTP helper (dgn/tnp proxy) ====== */
-function buildAxiosCfg(country, extra = {}, opts = {}) {
+function buildAxiosCfg(country, extra = {}) {
   const proxy = PROXIES[country];
   const headers = {
-    "User-Agent": opts.isMobile
-      ? MOBILE_USER_AGENTS[opts.platform || "android"]
-      : USER_AGENTS[country] || "CacheWarmer/1.0",
+    "User-Agent": USER_AGENTS[country] || "CacheWarmer/1.0",
   };
   const cfg = {
     headers,
@@ -168,8 +162,8 @@ function buildAxiosCfg(country, extra = {}, opts = {}) {
   return cfg;
 }
 
-async function fetchWithProxy(url, country, timeout = 20000, opts = {}) {
-  const cfg = buildAxiosCfg(country, { timeout }, opts);
+async function fetchWithProxy(url, country, timeout = 20000) {
+  const cfg = buildAxiosCfg(country, { timeout });
   const res = await axios.get(url, cfg);
   return res.data;
 }
@@ -312,24 +306,16 @@ async function purgeCloudflareBatch(urls) {
   }
 }
 
-/* ====== WARMING (POOL CONCURRENCY) ====== */
-function modeToOpts(mode) {
-  if (mode === "DESKTOP") return { isMobile: false, platform: undefined };
-  if (mode === "MOBILE-IOS") return { isMobile: true, platform: "ios" };
-  return { isMobile: true, platform: "android" };
-}
-
+/* ====== WARMING (POOL CONCURRENCY) — DESKTOP ONLY ====== */
 async function warmUrlsPool({
   urls,
   country,
-  mode,
   concurrency = 6,
   requestTimeout = 15000,
   logger,
 }) {
-  const opts = modeToOpts(mode);
   console.log(
-    `[${country}][${mode}] warming ${urls.length} URLs with concurrency=${concurrency}`
+    `[${country}] warming ${urls.length} URLs with concurrency=${concurrency}`
   );
 
   const needPurge = new Set();
@@ -342,7 +328,7 @@ async function warmUrlsPool({
       const url = urls[i];
       const t0 = Date.now();
       try {
-        const cfg = buildAxiosCfg(country, { timeout: requestTimeout }, opts);
+        const cfg = buildAxiosCfg(country, { timeout: requestTimeout });
         const res = await retryableGet(url, cfg, 3);
         const dt = Date.now() - t0;
 
@@ -355,12 +341,11 @@ async function warmUrlsPool({
             : "N/A";
 
         console.log(
-          `[${country}][${mode}] ${res.status} cf=${cfCache} ls=${lsCache} edge=${edge} - ${url}`
+          `[${country}] ${res.status} cf=${cfCache} ls=${lsCache} edge=${edge} - ${url}`
         );
 
         logger.log({
           country,
-          mode,
           url,
           status: res.status,
           cfCache,
@@ -377,11 +362,10 @@ async function warmUrlsPool({
       } catch (err) {
         const dt = Date.now() - t0;
         console.warn(
-          `[${country}][${mode}] ❌ ${url} -> ${err?.message || err}`
+          `[${country}] ❌ ${url} -> ${err?.message || err}`
         );
         logger.log({
           country,
-          mode,
           url,
           responseMs: dt,
           error: 1,
@@ -397,11 +381,11 @@ async function warmUrlsPool({
 
   if (needPurge.size > 0) {
     console.log(
-      `[${country}][${mode}] CF purge ${needPurge.size} URL (batched)`
+      `[${country}] CF purge ${needPurge.size} URL (batched)`
     );
     await purgeCloudflareBatch(Array.from(needPurge));
   } else {
-    console.log(`[${country}][${mode}] CF purge skipped (all HIT)`);
+    console.log(`[${country}] CF purge skipped (all HIT)`);
   }
 }
 
@@ -460,33 +444,14 @@ async function warmUrlsPool({
       console.log(`[${country}] Found ${urls.length} URLs after filtering`);
       logger.log({
         country,
-        mode: "INFO",
         url: domain,
         message: `Found ${urls.length} URLs`,
       });
 
+      // === DESKTOP ONLY RUN ===
       await warmUrlsPool({
         urls,
         country,
-        mode: "MOBILE-IOS",
-        concurrency: 6,
-        requestTimeout: 15000,
-        logger,
-      });
-
-      await warmUrlsPool({
-        urls,
-        country,
-        mode: "MOBILE-ANDROID",
-        concurrency: 6,
-        requestTimeout: 15000,
-        logger,
-      });
-
-      await warmUrlsPool({
-        urls,
-        country,
-        mode: "DESKTOP",
         concurrency: 6,
         requestTimeout: 15000,
         logger,
