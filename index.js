@@ -22,6 +22,23 @@ const DOMAINS_MAP = {
   es: "https://spabalimoon.com",
   se: "https://spabalimoon.com",
   fl: "https://spabalimoon.com",
+  my: "https://spabalimoon.com",
+  nz: "https://spabalimoon.com",
+  ae: "https://spabalimoon.com",
+  at: "https://spabalimoon.com",
+  hk: "https://spabalimoon.com",
+  be: "https://spabalimoon.com",
+  it: "https://spabalimoon.com",
+  tr: "https://spabalimoon.com",
+  ch: "https://spabalimoon.com",
+  sa: "https://spabalimoon.com",
+  in: "https://spabalimoon.com",
+  pl: "https://spabalimoon.com",
+  sg: "https://spabalimoon.com",
+  th: "https://spabalimoon.com",
+
+
+
 };
 
 const PROXIES = {
@@ -37,6 +54,20 @@ const PROXIES = {
   es: process.env.BRD_PROXY_ES,
   se: process.env.BRD_PROXY_SE,
   fl: process.env.BRD_PROXY_FL,
+  my: process.env.BRD_PROXY_MY,
+  nz: process.env.BRD_PROXY_NZ,
+  ae: process.env.BRD_PROXY_AE,
+  at: process.env.BRD_PROXY_AT,
+  hk: process.env.BRD_PROXY_HK,
+  be: process.env.BRD_PROXY_BE,
+  it: process.env.BRD_PROXY_IT,
+  tr: process.env.BRD_PROXY_TR,
+  ch: process.env.BRD_PROXY_CH,
+  sa: process.env.BRD_PROXY_SA,
+  in: process.env.BRD_PROXY_IN,
+  pl: process.env.BRD_PROXY_PL,
+  sg: process.env.BRD_PROXY_SG,
+  th: process.env.BRD_PROXY_TH,
 };
 
 // === 1 USER AGENT PER COUNTRY (DESKTOP ONLY) ===
@@ -53,6 +84,20 @@ const USER_AGENTS = {
   es: "SpaBaliMoon-CacheWarmer-ES/1.0",
   se: "SpaBaliMoon-CacheWarmer-SE/1.0",
   fl: "SpaBaliMoon-CacheWarmer-FL/1.0",
+  my: "SpaBaliMoon-CacheWarmer-MY/1.0",
+  nz: "SpaBaliMoon-CacheWarmer-NZ/1.0",
+  ae: "SpaBaliMoon-CacheWarmer-AE/1.0",
+  at: "SpaBaliMoon-CacheWarmer-AT/1.0",
+  hk: "SpaBaliMoon-CacheWarmer-HK/1.0",
+  be: "SpaBaliMoon-CacheWarmer-BE/1.0",
+  it: "SpaBaliMoon-CacheWarmer-IT/1.0",
+  tr: "SpaBaliMoon-CacheWarmer-TR/1.0",
+  ch: "SpaBaliMoon-CacheWarmer-CH/1.0",
+  sa: "SpaBaliMoon-CacheWarmer-SA/1.0",
+  in: "SpaBaliMoon-CacheWarmer-IN/1.0",
+  pl: "SpaBaliMoon-CacheWarmer-PL/1.0",
+  sg: "SpaBaliMoon-CacheWarmer-SG/1.0",
+  th: "SpaBaliMoon-CacheWarmer-TH/1.0",
 };
 
 /* ====== CLOUDFLARE (opsional) ====== */
