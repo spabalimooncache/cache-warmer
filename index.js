@@ -88,7 +88,6 @@ class AppsScriptLogger {
 
   log({
     country = "",
-    mode = "",
     url = "",
     status = "",
     cfCache = "",
@@ -103,7 +102,6 @@ class AppsScriptLogger {
       this.startedAt, // started_at (ISO)
       this.finishedAt, // finished_at (diisi saat finalize)
       country, // country
-      mode, // device/mode (tetap disimpan, di sini fixed "DESKTOP")
       url, // url
       status, // status code
       cfCache, // cf_cache
