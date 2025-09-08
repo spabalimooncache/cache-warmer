@@ -37,6 +37,20 @@ jobs:
           BRD_PROXY_SE: ${{ secrets.BRD_PROXY_SE }}
           BRD_PROXY_FL: ${{ secrets.BRD_PROXY_FL }}
           BRD_PROXY_EN: ${{ secrets.BRD_PROXY_EN }}
+          BRD_PROXY_MY: ${{ secrets.BRD_PROXY_MY }}
+          BRD_PROXY_NZ: ${{ secrets.BRD_PROXY_NZ }}
+          BRD_PROXY_AE: ${{ secrets.BRD_PROXY_AE }}
+          BRD_PROXY_AT: ${{ secrets.BRD_PROXY_AT }}
+          BRD_PROXY_HK: ${{ secrets.BRD_PROXY_HK }}
+          BRD_PROXY_BE: ${{ secrets.BRD_PROXY_BE }}
+          BRD_PROXY_IT: ${{ secrets.BRD_PROXY_IT }}
+          BRD_PROXY_CH: ${{ secrets.BRD_PROXY_CH }}
+          BRD_PROXY_TR: ${{ secrets.BRD_PROXY_TR }}
+          BRD_PROXY_SA: ${{ secrets.BRD_PROXY_SA }}
+          BRD_PROXY_IN: ${{ secrets.BRD_PROXY_IN }}
+          BRD_PROXY_PL: ${{ secrets.BRD_PROXY_PL }}
+          BRD_PROXY_SG: ${{ secrets.BRD_PROXY_SG }}
+          BRD_PROXY_TH: ${{ secrets.BRD_PROXY_TH }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
           APPS_SCRIPT_URL: ${{ secrets.APPS_SCRIPT_URL }}
