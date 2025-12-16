@@ -387,8 +387,9 @@ async function warmUrlsPool({
           `[${country}] ${res.status} cf=${cfCache} ls=${lsCache} edge=${edge} - ${url}`
         );
 
+        // ✅ SATU-SATUNYA PERUBAHAN
         logger.log({
-          country,
+          country: edge,
           url,
           status: res.status,
           cfCache,
@@ -404,9 +405,9 @@ async function warmUrlsPool({
         }
       } catch (err) {
         const dt = Date.now() - t0;
-        console.warn(
-          `[${country}] ❌ ${url} -> ${err?.message || err}`
-        );
+        console.warn(`[${country}] ❌ ${url} -> ${err?.message || err}`);
+
+        // ❌ TIDAK DIUBAH
         logger.log({
           country,
           url,
@@ -423,9 +424,7 @@ async function warmUrlsPool({
   await Promise.all(workers);
 
   if (needPurge.size > 0) {
-    console.log(
-      `[${country}] CF purge ${needPurge.size} URL (batched)`
-    );
+    console.log(`[${country}] CF purge ${needPurge.size} URL (batched)`);
     await purgeCloudflareBatch(Array.from(needPurge));
   } else {
     console.log(`[${country}] CF purge skipped (all HIT)`);
