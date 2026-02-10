@@ -11,93 +11,61 @@ const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL; // URL Web App GAS /exec
 /* ====== KONFIG DOMAIN/PROXY/UA ====== */
 const DOMAINS_MAP = {
   id: "https://spabalimoon.com",
-  tw: "https://spabalimoon.com",
   au: "https://spabalimoon.com",
-  nl: "https://spabalimoon.com",
-  no: "https://spabalimoon.com",
-  dk: "https://spabalimoon.com",
-  de: "https://spabalimoon.com",
-  fr: "https://spabalimoon.com",
-  en: "https://spabalimoon.com",
-  es: "https://spabalimoon.com",
-  se: "https://spabalimoon.com",
-  fl: "https://spabalimoon.com",
-  my: "https://spabalimoon.com",
-  nz: "https://spabalimoon.com",
   ae: "https://spabalimoon.com",
-  at: "https://spabalimoon.com",
-  hk: "https://spabalimoon.com",
-  be: "https://spabalimoon.com",
-  it: "https://spabalimoon.com",
-  tr: "https://spabalimoon.com",
-  ch: "https://spabalimoon.com",
-  sa: "https://spabalimoon.com",
-  in: "https://spabalimoon.com",
-  pl: "https://spabalimoon.com",
   sg: "https://spabalimoon.com",
-  th: "https://spabalimoon.com",
-
-
-
+  uk: "https://spabalimoon.com",
+  br: "https://spabalimoon.com",
+  fl: "https://spabalimoon.com",
+  in: "https://spabalimoon.com",
+  de: "https://spabalimoon.com",
+  nl: "https://spabalimoon.com",
+  dk: "https://spabalimoon.com",
+  es: "https://spabalimoon.com",
+  us: "https://spabalimoon.com",
+  fr: "https://spabalimoon.com",
+  ca: "https://spabalimoon.com",
+  mx: "https://spabalimoon.com",
 };
 
 const PROXIES = {
   id: process.env.BRD_PROXY_ID,
-  tw: process.env.BRD_PROXY_TW,
   au: process.env.BRD_PROXY_AU,
-  nl: process.env.BRD_PROXY_NL,
-  no: process.env.BRD_PROXY_NO,
-  dk: process.env.BRD_PROXY_DK,
-  de: process.env.BRD_PROXY_DE,
-  fr: process.env.BRD_PROXY_FR,
-  en: process.env.BRD_PROXY_EN,
-  es: process.env.BRD_PROXY_ES,
-  se: process.env.BRD_PROXY_SE,
-  fl: process.env.BRD_PROXY_FL,
-  my: process.env.BRD_PROXY_MY,
-  nz: process.env.BRD_PROXY_NZ,
   ae: process.env.BRD_PROXY_AE,
-  at: process.env.BRD_PROXY_AT,
-  hk: process.env.BRD_PROXY_HK,
-  be: process.env.BRD_PROXY_BE,
-  it: process.env.BRD_PROXY_IT,
-  tr: process.env.BRD_PROXY_TR,
-  ch: process.env.BRD_PROXY_CH,
-  sa: process.env.BRD_PROXY_SA,
-  in: process.env.BRD_PROXY_IN,
-  pl: process.env.BRD_PROXY_PL,
   sg: process.env.BRD_PROXY_SG,
-  th: process.env.BRD_PROXY_TH,
+  uk: process.env.BRD_PROXY_UK,
+  br: process.env.BRD_PROXY_BR,
+  fl: process.env.BRD_PROXY_FL,
+  in: process.env.BRD_PROXY_IN,
+  de: process.env.BRD_PROXY_DE,
+  nl: process.env.BRD_PROXY_NL,
+  dk: process.env.BRD_PROXY_DK,
+  es: process.env.BRD_PROXY_ES,
+  us: process.env.BRD_PROXY_US,
+  fr: process.env.BRD_PROXY_FR,
+  ca: process.env.BRD_PROXY_CA,
+  mx: process.env.BRD_PROXY_MX,
 };
 
 // === 1 USER AGENT PER COUNTRY (DESKTOP ONLY) ===
 const USER_AGENTS = {
+
   id: "SpaBaliMoon-CacheWarmer-ID/1.0",
-  tw: "SpaBaliMoon-CacheWarmer-TW/1.0",
   au: "SpaBaliMoon-CacheWarmer-AU/1.0",
-  nl: "SpaBaliMoon-CacheWarmer-NL/1.0",
-  no: "SpaBaliMoon-CacheWarmer-NO/1.0",
-  dk: "SpaBaliMoon-CacheWarmer-DK/1.0",
-  de: "SpaBaliMoon-CacheWarmer-DE/1.0",
-  fr: "SpaBaliMoon-CacheWarmer-FR/1.0",
-  en: "SpaBaliMoon-CacheWarmer-EN/1.0",
-  es: "SpaBaliMoon-CacheWarmer-ES/1.0",
-  se: "SpaBaliMoon-CacheWarmer-SE/1.0",
-  fl: "SpaBaliMoon-CacheWarmer-FL/1.0",
-  my: "SpaBaliMoon-CacheWarmer-MY/1.0",
-  nz: "SpaBaliMoon-CacheWarmer-NZ/1.0",
   ae: "SpaBaliMoon-CacheWarmer-AE/1.0",
-  at: "SpaBaliMoon-CacheWarmer-AT/1.0",
-  hk: "SpaBaliMoon-CacheWarmer-HK/1.0",
-  be: "SpaBaliMoon-CacheWarmer-BE/1.0",
-  it: "SpaBaliMoon-CacheWarmer-IT/1.0",
-  tr: "SpaBaliMoon-CacheWarmer-TR/1.0",
-  ch: "SpaBaliMoon-CacheWarmer-CH/1.0",
-  sa: "SpaBaliMoon-CacheWarmer-SA/1.0",
-  in: "SpaBaliMoon-CacheWarmer-IN/1.0",
-  pl: "SpaBaliMoon-CacheWarmer-PL/1.0",
   sg: "SpaBaliMoon-CacheWarmer-SG/1.0",
-  th: "SpaBaliMoon-CacheWarmer-TH/1.0",
+  uk: "SpaBaliMoon-CacheWarmer-UK/1.0",
+  br: "SpaBaliMoon-CacheWarmer-BR/1.0",
+  fl: "SpaBaliMoon-CacheWarmer-FL/1.0",
+  in: "SpaBaliMoon-CacheWarmer-IN/1.0",
+  de: "SpaBaliMoon-CacheWarmer-DE/1.0",
+  nl: "SpaBaliMoon-CacheWarmer-NL/1.0",
+  dk: "SpaBaliMoon-CacheWarmer-DK/1.0",
+  es: "SpaBaliMoon-CacheWarmer-ES/1.0",
+  us: "SpaBaliMoon-CacheWarmer-US/1.0",
+  fr: "SpaBaliMoon-CacheWarmer-FR/1.0",
+  ca: "SpaBaliMoon-CacheWarmer-CA/1.0",
+  mx: "SpaBaliMoon-CacheWarmer-MX/1.0",
 };
 
 /* ====== CLOUDFLARE (opsional) ====== */
@@ -198,7 +166,7 @@ function buildAxiosCfg(country, extra = {}) {
   const cfg = {
     headers,
     timeout: 30000,
-    validateStatus: () => true, // biar bisa baca header meski 4xx/5xx
+    validateStatus: () => true,
     ...extra,
   };
   if (proxy) cfg.httpsAgent = new HttpsProxyAgent(proxy);
@@ -248,8 +216,7 @@ async function fetchUrlsFromSitemap(sitemapUrl, country) {
     return urls.map((entry) => entry.loc).filter(Boolean);
   } catch (err) {
     console.warn(
-      `[${country}] ❌ Failed to fetch URLs from ${sitemapUrl}: ${
-        err?.message || err
+      `[${country}] ❌ Failed to fetch URLs from ${sitemapUrl}: ${err?.message || err
       }`
     );
   }
