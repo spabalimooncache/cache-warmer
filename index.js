@@ -11,61 +11,14 @@ const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL; // URL Web App GAS /exec
 /* ====== KONFIG DOMAIN/PROXY/UA ====== */
 const DOMAINS_MAP = {
   id: "https://spabalimoon.com",
-  au: "https://spabalimoon.com",
-  ae: "https://spabalimoon.com",
-  sg: "https://spabalimoon.com",
-  uk: "https://spabalimoon.com",
-  br: "https://spabalimoon.com",
-  fl: "https://spabalimoon.com",
-  in: "https://spabalimoon.com",
-  de: "https://spabalimoon.com",
-  nl: "https://spabalimoon.com",
-  dk: "https://spabalimoon.com",
-  es: "https://spabalimoon.com",
-  us: "https://spabalimoon.com",
-  fr: "https://spabalimoon.com",
-  ca: "https://spabalimoon.com",
-  mx: "https://spabalimoon.com",
 };
 
 const PROXIES = {
   id: process.env.BRD_PROXY_ID,
-  au: process.env.BRD_PROXY_AU,
-  ae: process.env.BRD_PROXY_AE,
-  sg: process.env.BRD_PROXY_SG,
-  uk: process.env.BRD_PROXY_UK,
-  br: process.env.BRD_PROXY_BR,
-  fl: process.env.BRD_PROXY_FL,
-  in: process.env.BRD_PROXY_IN,
-  de: process.env.BRD_PROXY_DE,
-  nl: process.env.BRD_PROXY_NL,
-  dk: process.env.BRD_PROXY_DK,
-  es: process.env.BRD_PROXY_ES,
-  us: process.env.BRD_PROXY_US,
-  fr: process.env.BRD_PROXY_FR,
-  ca: process.env.BRD_PROXY_CA,
-  mx: process.env.BRD_PROXY_MX,
 };
 
-// === 1 USER AGENT PER COUNTRY (DESKTOP ONLY) ===
 const USER_AGENTS = {
-
   id: "SpaBaliMoon-CacheWarmer-ID/1.0",
-  au: "SpaBaliMoon-CacheWarmer-AU/1.0",
-  ae: "SpaBaliMoon-CacheWarmer-AE/1.0",
-  sg: "SpaBaliMoon-CacheWarmer-SG/1.0",
-  uk: "SpaBaliMoon-CacheWarmer-UK/1.0",
-  br: "SpaBaliMoon-CacheWarmer-BR/1.0",
-  fl: "SpaBaliMoon-CacheWarmer-FL/1.0",
-  in: "SpaBaliMoon-CacheWarmer-IN/1.0",
-  de: "SpaBaliMoon-CacheWarmer-DE/1.0",
-  nl: "SpaBaliMoon-CacheWarmer-NL/1.0",
-  dk: "SpaBaliMoon-CacheWarmer-DK/1.0",
-  es: "SpaBaliMoon-CacheWarmer-ES/1.0",
-  us: "SpaBaliMoon-CacheWarmer-US/1.0",
-  fr: "SpaBaliMoon-CacheWarmer-FR/1.0",
-  ca: "SpaBaliMoon-CacheWarmer-CA/1.0",
-  mx: "SpaBaliMoon-CacheWarmer-MX/1.0",
 };
 
 /* ====== CLOUDFLARE (opsional) ====== */
@@ -104,7 +57,7 @@ class AppsScriptLogger {
     url = "",
     status = "",
     cfCache = "",
-    lsCache = "",
+    originCache = "",
     cfRay = "",
     responseMs = "",
     error = 0,
@@ -118,7 +71,7 @@ class AppsScriptLogger {
       url, // url
       status, // status code
       cfCache, // cf_cache
-      lsCache, // litespeed_cache
+      originCache, // vercel_cache
       cfRay, // cf_ray
       typeof responseMs === "number" ? responseMs : "", // response_ms
       error ? 1 : 0, // error (0/1)
@@ -142,7 +95,7 @@ class AppsScriptLogger {
       const res = await axios.post(
         APPS_SCRIPT_URL,
         { sheetName: this.sheetName, rows: this.rows },
-        { timeout: 90000, headers: { "Content-Type": "application/json" } }
+        { timeout: 120000, headers: { "Content-Type": "application/json" } }
       );
       console.log("Apps Script response:", res.status, res.data);
       if (!res.data?.ok) console.warn("Apps Script replied error:", res.data);
@@ -166,10 +119,19 @@ function buildAxiosCfg(country, extra = {}) {
   const cfg = {
     headers,
     timeout: 30000,
-    validateStatus: () => true,
     ...extra,
   };
   if (proxy) cfg.httpsAgent = new HttpsProxyAgent(proxy);
+  return cfg;
+}
+
+function buildRevalidationAxiosCfg(country) {
+  const cfg = buildAxiosCfg(country, { timeout: 15000 });
+  cfg.headers = {
+    ...cfg.headers,
+    "Cache-Control": "no-cache",
+    Pragma: "no-cache",
+  };
   return cfg;
 }
 
@@ -182,24 +144,40 @@ async function fetchWithProxy(url, country, timeout = 20000) {
 /* ====== SITEMAP ====== */
 async function fetchIndexSitemaps(domain, country) {
   try {
-    const xml = await fetchWithProxy(
-      `${domain}/sitemap_index.xml`,
-      country,
-      20000
-    );
+    const xml = await fetchWithProxy(`${domain}/sitemap.xml`, country);
     const result = await parseStringPromise(xml, {
       explicitArray: false,
       ignoreAttrs: true,
     });
     const sitemapList = result?.sitemapindex?.sitemap;
-    if (!sitemapList) return [];
-    const sitemaps = Array.isArray(sitemapList) ? sitemapList : [sitemapList];
-    return sitemaps.map((entry) => entry.loc).filter(Boolean);
+    if (sitemapList) {
+      return {
+        sitemaps: (Array.isArray(sitemapList) ? sitemapList : [sitemapList])
+          .map((e) => e.loc)
+          .filter(Boolean),
+        urls: [],
+      };
+    }
+
+    // Some sites redirect /sitemap.xml to a sitemap containing URLs
+    // directly instead of a sitemap index containing child sitemap files.
+    const urlList = result?.urlset?.url;
+    if (urlList) {
+      return {
+        sitemaps: [],
+        urls: (Array.isArray(urlList) ? urlList : [urlList])
+          .map((e) => e.loc)
+          .filter(Boolean),
+      };
+    }
+
+    console.warn(`[${country}] Sitemap response has no <sitemapindex> or <urlset>`);
+    return { sitemaps: [], urls: [] };
   } catch (err) {
     console.warn(
-      `[${country}] ❌ Failed to fetch sitemap index: ${err?.message || err}`
+      `[${country}] Failed to fetch sitemap index: ${err?.message || err}`
     );
-    return [];
+    return { sitemaps: [], urls: [] };
   }
 }
 
@@ -323,6 +301,7 @@ async function warmUrlsPool({
   concurrency = 6,
   requestTimeout = 15000,
   logger,
+  shouldStop = () => false,
 }) {
   console.log(
     `[${country}] warming ${urls.length} URLs with concurrency=${concurrency}`
@@ -332,18 +311,34 @@ async function warmUrlsPool({
   let idx = 0;
 
   const worker = async () => {
-    while (true) {
+    while (!shouldStop()) {
       const i = idx++;
       if (i >= urls.length) break;
       const url = urls[i];
       const t0 = Date.now();
       try {
         const cfg = buildAxiosCfg(country, { timeout: requestTimeout });
-        const res = await retryableGet(url, cfg, 3);
+        let res = await retryableGet(url, cfg, 3);
+        let originCache = res.headers?.["x-vercel-cache"] || "N/A";
+
+        if (String(originCache).toLowerCase() === "stale") {
+          console.log(
+            `[${country}] Cached response reports STALE; purging Cloudflare and requesting revalidation: ${url}`
+          );
+          await purgeCloudflareBatch([url]);
+          try {
+            res = await retryableGet(url, buildRevalidationAxiosCfg(country), 0);
+            originCache = res.headers?.["x-vercel-cache"] || "N/A";
+          } catch (revalidationError) {
+            console.warn(
+              `[${country}] Revalidation failed for ${url}: ${revalidationError?.message || revalidationError}`
+            );
+          }
+        }
+
         const dt = Date.now() - t0;
 
         const cfCache = res.headers?.["cf-cache-status"] || "N/A";
-        const lsCache = res.headers?.["x-litespeed-cache"] || "N/A";
         const cfRay = res.headers?.["cf-ray"] || "N/A";
         const edge =
           typeof cfRay === "string" && cfRay.includes("-")
@@ -351,30 +346,38 @@ async function warmUrlsPool({
             : "N/A";
 
         console.log(
-          `[${country}] ${res.status} cf=${cfCache} ls=${lsCache} edge=${edge} - ${url}`
+          `[${country}] ${res.status} cf=${cfCache} vercel=${originCache} edge=${edge} - ${url}`
         );
 
-        // ✅ SATU-SATUNYA PERUBAHAN
         logger.log({
           country: edge,
           url,
           status: res.status,
           cfCache,
-          lsCache,
+          originCache,
           cfRay,
           responseMs: dt,
           error: 0,
           message: "",
         });
 
-        if (String(lsCache).toLowerCase() !== "hit") {
+        const originStatus = String(originCache).toLowerCase();
+        if (originStatus === "stale" && String(cfCache).toLowerCase() === "hit") {
+          console.warn(
+            `[${country}] Cloudflare served a cached STALE response; Vercel revalidation was not confirmed for ${url}`
+          );
+        }
+        if (
+          originCache !== "N/A" &&
+          originStatus !== "hit"
+        ) {
           needPurge.add(url);
+          console.log(`[${country}] Queued Cloudflare purge (${originCache}): ${url}`);
         }
       } catch (err) {
         const dt = Date.now() - t0;
         console.warn(`[${country}] ❌ ${url} -> ${err?.message || err}`);
 
-        // ❌ TIDAK DIUBAH
         logger.log({
           country,
           url,
@@ -394,7 +397,7 @@ async function warmUrlsPool({
     console.log(`[${country}] CF purge ${needPurge.size} URL (batched)`);
     await purgeCloudflareBatch(Array.from(needPurge));
   } else {
-    console.log(`[${country}] CF purge skipped (all HIT)`);
+    console.log(`[${country}] CF purge skipped (no origin cache status requires purging)`);
   }
 }
 
@@ -403,39 +406,39 @@ async function warmUrlsPool({
   console.log(`[CacheWarmer] Started: ${new Date().toISOString()}`);
   const logger = new AppsScriptLogger();
 
-  const stop = async () => {
-    logger.setFinished();
-    await logger.flush();
-    console.log(`[CacheWarmer] Finished: ${new Date().toISOString()}`);
+  let stopping = false;
+  const requestStop = (signal) => {
+    if (stopping) return;
+    stopping = true;
+    console.log(
+      `${signal} caught. Stopping new URLs; waiting for in-flight requests and pending Cloudflare purge…`
+    );
   };
-
-  process.on("SIGINT", async () => {
-    console.log("SIGINT caught. Flushing logs…");
-    await stop();
-    process.exit(0);
-  });
-  process.on("SIGTERM", async () => {
-    console.log("SIGTERM caught. Flushing logs…");
-    await stop();
-    process.exit(0);
-  });
+  const onSigint = () => requestStop("SIGINT");
+  const onSigterm = () => requestStop("SIGTERM");
+  process.on("SIGINT", onSigint);
+  process.on("SIGTERM", onSigterm);
 
   try {
     for (const [country, domain] of Object.entries(DOMAINS_MAP)) {
+      if (stopping) break;
       if (!PROXIES[country]) {
         console.warn(`[${country}] ❌ Skipping: no proxy defined`);
         continue;
       }
 
       console.log(`🌐 [${country}] Processing ${domain}…`);
-      const sitemapList = await fetchIndexSitemaps(domain, country);
+      const { sitemaps: sitemapList, urls: directUrls } =
+        await fetchIndexSitemaps(domain, country);
+      if (stopping) break;
 
       const urlArrays = await Promise.all(
         sitemapList.map((sitemapUrl) =>
           fetchUrlsFromSitemap(sitemapUrl, country)
         )
       );
-      let urls = urlArrays.flat().filter(Boolean) || [];
+      if (stopping) break;
+      let urls = [...directUrls, ...urlArrays.flat()].filter(Boolean);
 
       urls = sameHostOnly(urls, domain);
       urls = filterSkips(urls);
@@ -464,15 +467,19 @@ async function warmUrlsPool({
         concurrency: 6,
         requestTimeout: 15000,
         logger,
+        shouldStop: () => stopping,
       });
 
       console.log(`[${country}] ✅ Finished\n`);
     }
   } finally {
-    await (async () => {
+    try {
       logger.setFinished();
       await logger.flush();
       console.log(`[CacheWarmer] Finished: ${new Date().toISOString()}`);
-    })();
+    } finally {
+      process.removeListener("SIGINT", onSigint);
+      process.removeListener("SIGTERM", onSigterm);
+    }
   }
 })();
